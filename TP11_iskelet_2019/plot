@@ -1,0 +1,33 @@
+#!/bin/bash
+
+for f in gnuplot; do
+    P=`which $f`
+    if [[ ! -x $P ]]; then
+        echo "Depodan $f paketini yuklemeniz gerekiyor."
+        exit 1
+    fi
+done
+
+CPU=$(cat /proc/cpuinfo | grep "model name" | awk -F": " '{ print $2 }' | head -n1)
+CPU=$(echo $CPU)
+TITLE="$CPU || Performans Karşılaştırması"
+
+gnuplot <<- EOF
+    set term pdf font ",9"
+    set output 'performans.pdf'
+    set title '$TITLE'
+    set xlabel 'Boyut (N)'
+    set ylabel 'Zaman (T(N))'
+    set xtics ("12.5k" 0,"25k" 1,"50k" 2,"100k" 3, "200k" 4, "400k" 5, "800k" 6, "1.6m" 7)
+    set grid
+
+    set yrange [-0.1:600]
+    #set logscale y 2
+    set key inside right bottom spacing 1.5
+
+    plot for [col=1:4] 'perf.txt' using 0:col with lines lw 2 t columnheader
+    #plot for [col=1:5] 'perf.txt' using 0:col smooth bezier lw 2 t columnheader
+
+EOF
+
+echo "Grafik performans.pdf dosyasina kaydedildi."
